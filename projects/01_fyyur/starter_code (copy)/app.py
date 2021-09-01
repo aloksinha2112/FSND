@@ -178,7 +178,28 @@ def search_venues():
 def show_venue(venue_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
+  now =babel.dates.format_datetime(datetime.now(), "EE MM, dd, y h:mma", locale='en')
   venueforid = Venue.query.get(venue_id)
+  pastshows = Show.query.filter(Show.venueid == venue_id, Show.starttime <= now)
+  upcomingshows = Show.query.filter(Show.venueid == venue_id, Show.starttime > now)
+  pastshowsdata = []
+  for pastshow in pastshows:
+    artist = Artist.query.get(pastshow.artistid)
+    pastshowsdata.append({
+      "venue_id": artist.id,
+      "venue_name": artist.name,
+      "venue_image_link": artist.image_link,
+      "start_time": pastshow.starttime
+    })
+  upcominghowsdata = []
+  for upcomingshow in upcomingshows:
+    artist = Artist.query.get(upcomingshow.artistid)
+    upcominghowsdata.append({
+      "venue_id": artist.id,
+      "venue_name": artist.name,
+      "venue_image_link": artist.image_link,
+      "start_time": upcomingshow.starttime
+    })
   venudatawithshow={
     "id": venueforid.id,
     "name": venueforid.name,
@@ -192,15 +213,10 @@ def show_venue(venue_id):
     "seeking_talent": False,
     "seeking_description": venueforid.seeking_description,
     "image_link": venueforid.image_link,
-    "past_shows": [{
-      "artist_id": 4,
-      "artist_name": "Guns N Petals",
-      "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
-      "start_time": "2019-05-21T21:30:00.000Z"
-    }],
-    "upcoming_shows": [],
-    "past_shows_count": 1,
-    "upcoming_shows_count": 0,
+    "past_shows": pastshowsdata,
+    "upcoming_shows": upcominghowsdata,
+    "past_shows_count": len(pastshowsdata),
+    "upcoming_shows_count": len(upcominghowsdata),
   }
   data1={
     "id": 1,
@@ -295,21 +311,28 @@ def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
   newvenue = Venue(
-      name= request.form.get('name', ''),     
-      address=request.form.get('address', ''),
-      city=request.form.get('city', ''),
-      state=request.form.get('state', ''),
-      phone=request.form.get('phone', ''),
-      facebook_link=request.form.get('facebook_link', ''),
-      image_link=request.form.get('image_link', ''),
-      website_link = request.form.get('website_link', ''),
-      genres = request.form.get('genres', ''),
-      #seeking_talent = request.form.get('seeking_talent'),
-      seeking_description =request.form.get('seeking_description', ''))
-  db.session.add(newvenue)
-  db.session.commit()
+        name= request.form.get('name', ''),     
+        address=request.form.get('address', ''),
+        city=request.form.get('city', ''),
+        state=request.form.get('state', ''),
+        phone=request.form.get('phone', ''),
+        facebook_link=request.form.get('facebook_link', ''),
+        image_link=request.form.get('image_link', ''),
+        website_link = request.form.get('website_link', ''),
+        genres = request.form.get('genres', ''),
+        #seeking_talent = request.form.get('seeking_talent'),
+        seeking_description =request.form.get('seeking_description', ''))
+  try:
+    db.session.add(newvenue)
+    db.session.commit()
+    flash('Venue ' + request.form['name'] + ' was successfully listed!')
+  except:
+    db.session.rollback()
+    flash('An error occurred. Venue ' + newvenue.name + ' could not be listed.')
+  finally:
+    db.session.close()
   # on successful db insert, flash success
-  flash('Venue ' + request.form['name'] + ' was successfully listed!')
+  #flash('Venue ' + request.form['name'] + ' was successfully listed!')
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
@@ -366,7 +389,7 @@ def search_artists():
   # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
   # search for "band" should return "The Wild Sax Band".
   search_term = request.form.get('search_term', '')
-  artists = Artist.query.filter(Venue.name.ilike("%" + search_term + "%")).all()
+  artists = Artist.query.filter(Artist.name.ilike("%" + search_term + "%")).all()
   response = {
     "count": len(artists),
     "data": []
@@ -390,7 +413,28 @@ def search_artists():
 def show_artist(artist_id):
   # shows the artist page with the given artist_id
   # TODO: replace with real artist data from the artist table, using artist_id
+  now =babel.dates.format_datetime(datetime.now(), "EE MM, dd, y h:mma", locale='en')
   artist = Artist.query.get(artist_id)
+  pastshows = Show.query.filter(Show.artistid == artist_id, Show.starttime <= now)
+  upcomingshows = Show.query.filter(Show.artistid == artist_id, Show.starttime > now)
+  pastshowsdata = []
+  for pastshow in pastshows:
+    venue = Venue.query.get(pastshow.venueid)
+    pastshowsdata.append({
+      "venue_id": venue.id,
+      "venue_name": venue.name,
+      "venue_image_link": venue.image_link,
+      "start_time": pastshow.starttime
+    })
+  upcominghowsdata = []
+  for upcomingshow in upcomingshows:
+    venue = Venue.query.get(upcomingshow.venueid)
+    upcominghowsdata.append({
+      "venue_id": venue.id,
+      "venue_name": venue.name,
+      "venue_image_link": venue.image_link,
+      "start_time": upcomingshow.starttime
+    })
   artiswithshow={
     "id": artist.id,
     "name": artist.name,
@@ -403,15 +447,10 @@ def show_artist(artist_id):
     "seeking_venue": False,
     "seeking_description": artist.seeking_description,
     "image_link": artist.image_link,
-    "past_shows": [{
-      "venue_id": 1,
-      "venue_name": "The Musical Hop",
-      "venue_image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60",
-      "start_time": "2019-05-21T21:30:00.000Z"
-    }],
-    "upcoming_shows": [],
-    "past_shows_count": 1,
-    "upcoming_shows_count": 0,
+    "past_shows": pastshowsdata,
+    "upcoming_shows": upcominghowsdata,
+    "past_shows_count": len(pastshowsdata),
+    "upcoming_shows_count": len(upcominghowsdata),
   }
 
   data1={
@@ -629,10 +668,16 @@ def create_artist_submission():
       genres = request.form.get('genres', ''),
       #seeking_venue = request.form.get('seeking_venue'),
       seeking_description =request.form.get('seeking_description', ''))
-  db.session.add(newartist)
-  db.session.commit()
+  try:    
+    db.session.add(newartist)
+    db.session.commit()
   # on successful db insert, flash success
-  flash('Artist ' + request.form['name'] + ' was successfully listed!')
+    flash('Artist ' + request.form['name'] + ' was successfully listed!')
+  except:
+    db.session.rollback
+    flash('An error occurred. Artist ' + newartist.name + ' could not be listed.')
+  finally:
+    db.session.close  
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
   return render_template('pages/home.html')
