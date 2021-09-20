@@ -64,6 +64,13 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(len(data["categories"]))
         self.assertTrue(len(data["questions"]))
     
+    def test_get_paginated_questions_404_error(self):
+        res = self.client().get('/questions?page=20')
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'Page Not Found')
+    
     def test_delete_questions(self):
         
         new_question = Question('testquestion', 'testanswer', '1', '1')
@@ -127,8 +134,37 @@ class TriviaTestCase(unittest.TestCase):
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
-        self.assertTrue(data['question'])    
-               
+        self.assertTrue(data['question'])   
+         
+    def test_get_paginated_questions_404_error(self):
+        res = self.client().get('/questions?page=20')
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)    
+
+    def test_delete_questions_422_not_allowed(self):
+        res = self.client().delete('/questions/2222')
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False) 
+
+    def test_create_questions_400_validation_error(self):
+        new_question = {
+            'question': 'test question',
+            'answer': 'test answer'
+        }
+        res = self.client().post('/questions', json=new_question)
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(data['success'], False)
+
+    def test_get_qestionsbycategory_400_not_exist(self):
+        res = self.client().get('/categories/2222/questions')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(data['success'], False)
+
 # Make the tests conveniently executable
 if __name__ == "__main__":
     unittest.main()
